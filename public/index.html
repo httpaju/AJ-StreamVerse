@@ -4,147 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AJ StreamVerse</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f0f0;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            gap: 20px;
-        }
-        video {
-            width: 100%;
-            max-width: 580px;
-            background-color: #000;
-            border-radius: 8px;
-        }
-        #controls {
-            margin-top: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <div>
-            <h2>AJ StreamVerse</h2>
-            <video id="localVideo" autoplay muted playsinline></video>
-            <div id="controls">
-                <button id="startButton">Start Streaming</button>
-                <button id="stopButton" disabled>Stop Streaming</button>
+    <header>
+        <h1>AJ StreamVerse</h1>
+        <button id="broadcastButton">Go Live</button>
+        
+    </header>
+    <div class="main-container">
+        <div class="video-section">
+            <video id="liveVideo" autoplay playsinline></video>
+            <div class="video-info">
+                <h2 id="streamTitle">No Live Stream Active</h2>
+                <p id="streamStatus">Waiting for a broadcaster...</p>
+                <p>Total Users: <span id="userCount">0</span> | Live Streams: <span id="streamCount">0</span></p>
             </div>
         </div>
-        <div>
-            <h2>Viewer Stream</h2>
-            <video id="remoteVideo" autoplay playsinline></video>
+        <div class="sidebar">
+            <h3>Live Now</h3>
+            <div id="liveStreams"></div>
         </div>
     </div>
-
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const startButton = document.getElementById('startButton');
-        const stopButton = document.getElementById('stopButton');
-
-        let localStream;
-        let peerConnection;
-        const roomId = 'live-stream-room'; // Simple room ID for demo
-
-        const config = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' } // Free STUN server
-            ]
-        };
-
-        // Start streaming
-        startButton.onclick = async () => {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localVideo.srcObject = localStream;
-                startButton.disabled = true;
-                stopButton.disabled = false;
-
-                socket.emit('join-room', roomId);
-                startPeerConnection();
-            } catch (err) {
-                console.error('Error accessing media devices:', err);
-            }
-        };
-
-        // Stop streaming
-        stopButton.onclick = () => {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localVideo.srcObject = null;
-                if (peerConnection) peerConnection.close();
-                startButton.disabled = false;
-                stopButton.disabled = true;
-            }
-        };
-
-        // WebRTC Peer Connection
-        function startPeerConnection() {
-            peerConnection = new RTCPeerConnection(config);
-
-            // Add local stream to peer connection
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-            // Handle ICE candidates
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    socket.emit('ice-candidate', { target: 'all', candidate: event.candidate });
-                }
-            };
-
-            // Handle remote stream
-            peerConnection.ontrack = (event) => {
-                remoteVideo.srcObject = event.streams[0];
-            };
-
-            // Create and send offer
-            peerConnection.createOffer()
-                .then(offer => peerConnection.setLocalDescription(offer))
-                .then(() => {
-                    socket.emit('offer', { offer: peerConnection.localDescription, target: 'all' });
-                });
-        }
-
-        // Socket.IO signaling events
-        socket.on('user-connected', (userId) => {
-            console.log('User connected:', userId);
-        });
-
-        socket.on('offer', async (data) => {
-            if (!peerConnection) startPeerConnection();
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            socket.emit('answer', { answer, target: data.sender });
-        });
-
-        socket.on('answer', (data) => {
-            peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-        });
-
-        socket.on('ice-candidate', (candidate) => {
-            peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-        });
-
-        socket.on('user-disconnected', (userId) => {
-            console.log('User disconnected:', userId);
-            remoteVideo.srcObject = null;
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
-      </html>
+</html>
