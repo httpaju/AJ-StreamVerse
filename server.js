@@ -6,20 +6,31 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve static files (HTML, JS, etc.)
 app.use(express.static('public'));
 
-// Socket.IO signaling
-io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
+let broadcaster = null;
+let users = {}; // Store connected users
+const admins = { 'ajmal': 'ajmal123' }; // Hardcoded admin credentials
 
-    // Join a room for broadcasting
-    socket.on('join-room', (roomId) => {
-        socket.join(roomId);
-        socket.broadcast.to(roomId).emit('user-connected', socket.id);
+io.on('connection', (socket) => {
+    console.log('User connected:', socket.id);
+    users[socket.id] = { role: 'user', isBroadcaster: false };
+
+    socket.on('broadcaster', () => {
+        if (!broadcaster) {
+            broadcaster = socket.id;
+            users[socket.id].isBroadcaster = true;
+            socket.broadcast.emit('broadcaster');
+            io.emit('update-users', Object.keys(users).length, broadcaster ? 1 : 0);
+        }
     });
 
-    // Handle WebRTC signaling
+    socket.on('watcher', () => {
+        if (broadcaster) {
+            socket.to(broadcaster).emit('watcher', socket.id);
+        }
+    });
+
     socket.on('offer', (data) => {
         socket.to(data.target).emit('offer', { offer: data.offer, sender: socket.id });
     });
@@ -32,9 +43,33 @@ io.on('connection', (socket) => {
         socket.to(data.target).emit('ice-candidate', data.candidate);
     });
 
+    socket.on('admin-login', ({ username, password }) => {
+        if (admins[username] && admins[username] === password) {
+            users[socket.id].role = 'admin';
+            socket.emit('admin-auth', true);
+            socket.emit('user-list', users, broadcaster);
+        } else {
+            socket.emit('admin-auth', false);
+        }
+    });
+
+    socket.on('stop-stream', (targetId) => {
+        if (users[socket.id].role === 'admin' && targetId === broadcaster) {
+            socket.to(targetId).emit('force-stop');
+            broadcaster = null;
+            io.emit('broadcaster-disconnected');
+            io.emit('update-users', Object.keys(users).length, 0);
+        }
+    });
+
     socket.on('disconnect', () => {
+        if (socket.id === broadcaster) {
+            broadcaster = null;
+            socket.broadcast.emit('broadcaster-disconnected');
+        }
+        delete users[socket.id];
+        io.emit('update-users', Object.keys(users).length, broadcaster ? 1 : 0);
         console.log('User disconnected:', socket.id);
-        socket.broadcast.emit('user-disconnected', socket.id);
     });
 });
 
