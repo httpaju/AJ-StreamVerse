@@ -1,92 +1,55 @@
 const socket = io();
+const isBroadcastPage = window.location.pathname.includes('broadcast.html');
+const isViewerPage = window.location.pathname.includes('viewer.html');
 const isAdminPage = window.location.pathname.includes('admin.html');
 let localStream;
 let peerConnection;
-let isBroadcaster = false;
 
 const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-// User page logic
-if (!isAdminPage) {
-    const liveVideo = document.getElementById('liveVideo');
-    const broadcastButton = document.getElementById('broadcastButton');
+// Broadcaster page logic
+if (isBroadcastPage) {
+    const localVideo = document.getElementById('localVideo');
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
     const streamTitle = document.getElementById('streamTitle');
     const streamStatus = document.getElementById('streamStatus');
     const userCount = document.getElementById('userCount');
     const streamCount = document.getElementById('streamCount');
-    const liveStreams = document.getElementById('liveStreams');
 
-    broadcastButton.onclick = async () => {
-        if (!isBroadcaster) {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                liveVideo.srcObject = localStream;
-                liveVideo.muted = true;
-                socket.emit('broadcaster');
-                isBroadcaster = true;
-                broadcastButton.textContent = 'Stop Broadcasting';
-                streamTitle.textContent = 'Your Live Stream';
-                streamStatus.textContent = 'Live Now';
-                liveStreams.innerHTML = '<p>Your Live Stream - Broadcasting</p>';
-            } catch (err) {
-                console.error('Error:', err);
-            }
-        } else {
-            stopBroadcasting();
+    startButton.onclick = async () => {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localVideo.srcObject = localStream;
+            socket.emit('broadcaster');
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            streamStatus.textContent = 'Live Now';
+        } catch (err) {
+            console.error('Error starting broadcast:', err);
         }
     };
 
-    function stopBroadcasting() {
+    stopButton.onclick = () => {
         if (localStream) {
             localStream.getTracks().forEach(track => track.stop());
-            liveVideo.srcObject = null;
+            localVideo.srcObject = null;
             if (peerConnection) peerConnection.close();
-            isBroadcaster = false;
-            broadcastButton.textContent = 'Go Live';
-            streamTitle.textContent = 'No Live Stream Active';
-            streamStatus.textContent = 'Waiting for a broadcaster...';
-            liveStreams.innerHTML = '';
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            streamStatus.textContent = 'Not Live';
         }
-    }
-
-    socket.on('connect', () => {
-        if (!isBroadcaster) socket.emit('watcher');
-    });
-
-    socket.on('broadcaster', () => {
-        if (!isBroadcaster) socket.emit('watcher');
-    });
+    };
 
     socket.on('watcher', (id) => {
-        if (isBroadcaster) {
-            peerConnection = new RTCPeerConnection(config);
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) socket.emit('ice-candidate', { target: id, candidate: event.candidate });
-            };
-            peerConnection.createOffer()
-                .then(offer => peerConnection.setLocalDescription(offer))
-                .then(() => socket.emit('offer', { offer: peerConnection.localDescription, target: id }));
-        }
-    });
-
-    socket.on('offer', async (data) => {
-        if (!isBroadcaster) {
-            peerConnection = new RTCPeerConnection(config);
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-            peerConnection.ontrack = (event) => {
-                liveVideo.srcObject = event.streams[0];
-                streamTitle.textContent = 'Live Stream';
-                streamStatus.textContent = 'Watching Live';
-                liveStreams.innerHTML = '<p>Live Stream - Watching</p>';
-            };
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) socket.emit('ice-candidate', { target: data.sender, candidate: event.candidate });
-            };
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            socket.emit('answer', { answer, target: data.sender });
-        }
+        peerConnection = new RTCPeerConnection(config);
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) socket.emit('ice-candidate', { target: id, candidate: event.candidate });
+        };
+        peerConnection.createOffer()
+            .then(offer => peerConnection.setLocalDescription(offer))
+            .then(() => socket.emit('offer', { offer: peerConnection.localDescription, target: id }));
     });
 
     socket.on('answer', (data) => {
@@ -97,23 +60,62 @@ if (!isAdminPage) {
         peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
     });
 
-    socket.on('broadcaster-disconnected', () => {
-        if (!isBroadcaster) {
-            liveVideo.srcObject = null;
-            streamTitle.textContent = 'No Live Stream Active';
-            streamStatus.textContent = 'Broadcaster disconnected';
-            liveStreams.innerHTML = '';
-            if (peerConnection) peerConnection.close();
-        }
+    socket.on('force-stop', () => {
+        stopButton.click();
     });
 
     socket.on('update-users', (totalUsers, activeStreams) => {
         userCount.textContent = totalUsers;
         streamCount.textContent = activeStreams;
     });
+}
 
-    socket.on('force-stop', () => {
-        if (isBroadcaster) stopBroadcasting();
+// Viewer page logic
+if (isViewerPage) {
+    const remoteVideo = document.getElementById('remoteVideo');
+    const streamTitle = document.getElementById('streamTitle');
+    const streamStatus = document.getElementById('streamStatus');
+    const userCount = document.getElementById('userCount');
+    const streamCount = document.getElementById('streamCount');
+
+    socket.on('connect', () => {
+        socket.emit('watcher');
+    });
+
+    socket.on('broadcaster-available', () => {
+        socket.emit('watcher');
+    });
+
+    socket.on('offer', async (data) => {
+        peerConnection = new RTCPeerConnection(config);
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+        peerConnection.ontrack = (event) => {
+            remoteVideo.srcObject = event.streams[0];
+            streamTitle.textContent = 'Live Stream';
+            streamStatus.textContent = 'Watching Live';
+        };
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) socket.emit('ice-candidate', { target: data.sender, candidate: event.candidate });
+        };
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        socket.emit('answer', { answer, target: data.sender });
+    });
+
+    socket.on('ice-candidate', (candidate) => {
+        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    });
+
+    socket.on('broadcaster-disconnected', () => {
+        remoteVideo.srcObject = null;
+        streamTitle.textContent = 'No Live Stream';
+        streamStatus.textContent = 'Broadcaster disconnected';
+        if (peerConnection) peerConnection.close();
+    });
+
+    socket.on('update-users', (totalUsers, activeStreams) => {
+        userCount.textContent = totalUsers;
+        streamCount.textContent = activeStreams;
     });
 }
 
