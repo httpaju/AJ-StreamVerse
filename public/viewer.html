@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJ StreamVerse - Viewer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="/logo.png" alt="AJ StreamVerse Logo" class="logo">
+            <h1>AJ StreamVerse</h1>
+        </div>
+        <div>
+            <a href="/" class="home-link">Back to Home</a>
+            <a href="/broadcast.html" class="broadcast-link">Broadcast Page</a>
+            <a href="/admin.html" class="admin-link">Admin</a>
+        </div>
+    </header>
+    <div class="main-container">
+        <div class="video-section">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <div class="video-info">
+                <h2 id="streamTitle">No Live Stream</h2>
+                <p id="streamStatus">Waiting for a broadcast...</p>
+                <p>Total Users: <span id="userCount">0</span> | Live Streams: <span id="streamCount">0</span></p>
+            </div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
