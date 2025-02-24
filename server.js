@@ -8,21 +8,14 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-let broadcaster = null;
-let users = {}; // Store connected users
-const admins = { 'ajmal': 'ajmal123' }; // Hardcoded admin credentials
+let broadcaster;
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
-    users[socket.id] = { role: 'user', isBroadcaster: false };
 
     socket.on('broadcaster', () => {
-        if (!broadcaster) {
-            broadcaster = socket.id;
-            users[socket.id].isBroadcaster = true;
-            socket.broadcast.emit('broadcaster');
-            io.emit('update-users', Object.keys(users).length, broadcaster ? 1 : 0);
-        }
+        broadcaster = socket.id;
+        socket.broadcast.emit('broadcaster');
     });
 
     socket.on('watcher', () => {
@@ -43,32 +36,11 @@ io.on('connection', (socket) => {
         socket.to(data.target).emit('ice-candidate', data.candidate);
     });
 
-    socket.on('admin-login', ({ username, password }) => {
-        if (admins[username] && admins[username] === password) {
-            users[socket.id].role = 'admin';
-            socket.emit('admin-auth', true);
-            socket.emit('user-list', users, broadcaster);
-        } else {
-            socket.emit('admin-auth', false);
-        }
-    });
-
-    socket.on('stop-stream', (targetId) => {
-        if (users[socket.id].role === 'admin' && targetId === broadcaster) {
-            socket.to(targetId).emit('force-stop');
-            broadcaster = null;
-            io.emit('broadcaster-disconnected');
-            io.emit('update-users', Object.keys(users).length, 0);
-        }
-    });
-
     socket.on('disconnect', () => {
         if (socket.id === broadcaster) {
             broadcaster = null;
             socket.broadcast.emit('broadcaster-disconnected');
         }
-        delete users[socket.id];
-        io.emit('update-users', Object.keys(users).length, broadcaster ? 1 : 0);
         console.log('User disconnected:', socket.id);
     });
 });
