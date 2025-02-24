@@ -3,24 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AJ StreamVerse - Admin</title>
+    <title>AJ StreamVerse - Broadcast</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>AJ StreamVerse Admin Panel</h1>
-        <a href="/index.html" class="user-link">Back to User Page</a>
+        <div class="logo-container">
+            <img src="/logo.png" alt="AJ StreamVerse Logo" class="logo">
+            <h1>AJ StreamVerse - Broadcast</h1>
+        </div>
+        <div>
+            <a href="/" class="home-link">Back to Home</a>
+            <a href="/viewer.html" class="viewer-link">Viewer Page</a>
+            <a href="/admin.html" class="admin-link">Admin</a>
+        </div>
     </header>
     <div class="main-container">
-        <div class="admin-section">
-            <h2>Admin Login</h2>
-            <input type="text" id="adminUsername" placeholder="Username">
-            <input type="password" id="adminPassword" placeholder="Password">
-            <button id="loginButton">Login</button>
-            <p id="loginStatus"></p>
-            <h2>Connected Users</h2>
-            <ul id="userList"></ul>
-            <button id="stopStreamButton" disabled>Stop Current Stream</button>
+        <div class="video-section">
+            <video id="localVideo" autoplay muted playsinline></video>
+            <div class="video-info">
+                <h2 id="streamTitle">Your Broadcast</h2>
+                <p id="streamStatus">Not Live</p>
+                <button id="startButton">Start Broadcast</button>
+                <button id="stopButton" disabled>Stop Broadcast</button>
+                <p>Total Users: <span id="userCount">0</span> | Live Streams: <span id="streamCount">0</span></p>
+            </div>
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
