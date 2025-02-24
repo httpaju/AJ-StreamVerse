@@ -3,27 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AJ StreamVerse</title>
+    <title>AJ StreamVerse - Broadcast</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>AJ StreamVerse</h1>
-        <button id="broadcastButton">Go Live</button>
-        
+        <h1>Broadcast Live</h1>
+        <a href="/index.html" class="viewer-link">Go to Viewer</a>
     </header>
     <div class="main-container">
         <div class="video-section">
-            <video id="liveVideo" autoplay playsinline></video>
+            <video id="localVideo" autoplay muted playsinline></video>
             <div class="video-info">
-                <h2 id="streamTitle">No Live Stream Active</h2>
-                <p id="streamStatus">Waiting for a broadcaster...</p>
-                <p>Total Users: <span id="userCount">0</span> | Live Streams: <span id="streamCount">0</span></p>
+                <h2>Your Live Stream</h2>
+                <p id="streamStatus">Not Live</p>
+                <button id="startButton">Start Broadcasting</button>
+                <button id="stopButton" disabled>Stop Broadcasting</button>
             </div>
-        </div>
-        <div class="sidebar">
-            <h3>Live Now</h3>
-            <div id="liveStreams"></div>
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
