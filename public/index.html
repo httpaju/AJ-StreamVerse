@@ -3,24 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AJ StreamVerse - Watch Live</title>
+    <title>AJ StreamVerse</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>AJ StreamVerse</h1>
-        
+        <div class="logo-container">
+            <img src="/logo.png" alt="AJ StreamVerse Logo" class="logo">
+            <h1>AJ StreamVerse</h1>
+        </div>
+        <div>
+            <button onclick="location.reload()" class="refresh-button">Refresh</button>
+        </div>
     </header>
     <div class="main-container">
-        <div class="video-section">
-            <video id="liveVideo" autoplay playsinline></video>
-            <div class="video-info">
-                <h2>Live Stream</h2>
-                <p id="streamStatus">Waiting for broadcaster...</p>
-            </div>
+        <div class="landing-section">
+            <h2>Welcome to AJ StreamVerse</h2>
+            <p>Choose your role:</p>
+            <a href="/broadcast.html" class="button">Broadcast</a>
+            <a href="/viewer.html" class="button">Watch Live</a>
+            <a href="/admin.html" class="button">Admin Panel</a>
         </div>
     </div>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
 </body>
 </html>
