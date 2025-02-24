@@ -1,7 +1,7 @@
 {
   "name": "AJ StreamVerse",
   "version": "1.0.0",
-  "description": "A WebRTC live streaming app with Socket.IO",
+  "description": "A AJ APPLICATIONS Streaming platform ",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,5 +11,8 @@
     "socket.io": "^4.7.2"
   },
   "author": "Ajmal",
-  "license": "ISC"
+  "license": "ISC",
+  "engines": {
+    "node": ">=14.0.0"
+  }
 }
