@@ -3,22 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AJ StreamVerse - Broadcast</title>
+    <title>AJ StreamVerse - Watch Live</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>Broadcast Live</h1>
-        <a href="/index.html" class="viewer-link">Go to Viewer</a>
+        <h1>AJ StreamVerse</h1>
+        <a href="/broadcaster.html" class="broadcaster-link">Go to Broadcaster</a>
     </header>
     <div class="main-container">
         <div class="video-section">
-            <video id="localVideo" autoplay muted playsinline></video>
+            <video id="liveVideo" autoplay playsinline></video>
             <div class="video-info">
-                <h2>Your Live Stream</h2>
-                <p id="streamStatus">Not Live</p>
-                <button id="startButton">Start Broadcasting</button>
-                <button id="stopButton" disabled>Stop Broadcasting</button>
+                <h2>Live Stream</h2>
+                <p id="streamStatus">Waiting for broadcaster...</p>
             </div>
         </div>
     </div>
