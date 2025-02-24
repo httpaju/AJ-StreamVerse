@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJ StreamVerse - Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>AJ StreamVerse Admin Panel</h1>
+        <a href="/index.html" class="user-link">Back to User Page</a>
+    </header>
+    <div class="main-container">
+        <div class="admin-section">
+            <h2>Admin Login</h2>
+            <input type="text" id="adminUsername" placeholder="Username">
+            <input type="password" id="adminPassword" placeholder="Password">
+            <button id="loginButton">Login</button>
+            <p id="loginStatus"></p>
+            <h2>Connected Users</h2>
+            <ul id="userList"></ul>
+            <button id="stopStreamButton" disabled>Stop Current Stream</button>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
