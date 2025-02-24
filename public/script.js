@@ -3,12 +3,13 @@ const isBroadcastPage = window.location.pathname.includes('broadcast.html');
 const isViewerPage = window.location.pathname.includes('viewer.html');
 const isAdminPage = window.location.pathname.includes('admin.html');
 let localStream;
-let peerConnections = {}; // Store multiple peer connections for broadcaster
+let peerConnections = {}; // For broadcaster to manage multiple viewers
+let peerConnection; // For viewer
 
 const config = {
     iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' }, // STUN server
-        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' } // Public TURN server
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' }
     ]
 };
 
@@ -45,11 +46,13 @@ if (isBroadcastPage) {
             startButton.disabled = false;
             stopButton.disabled = true;
             streamStatus.textContent = 'Not Live';
+            socket.emit('broadcaster-stopped'); // Notify viewers explicitly
             console.log('Broadcast stopped');
         }
     };
 
     socket.on('watcher', (viewerId) => {
+        if (!localStream) return; // Ignore if not broadcasting yet
         console.log('New watcher:', viewerId);
         const peerConnection = new RTCPeerConnection(config);
         peerConnections[viewerId] = peerConnection;
@@ -59,6 +62,13 @@ if (isBroadcastPage) {
             if (event.candidate) {
                 socket.emit('ice-candidate', { target: viewerId, candidate: event.candidate });
                 console.log('Sent ICE candidate to', viewerId);
+            }
+        };
+        peerConnection.onconnectionstatechange = () => {
+            console.log('Broadcaster connection state for', viewerId, ':', peerConnection.connectionState);
+            if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
+                delete peerConnections[viewerId];
+                peerConnection.close();
             }
         };
 
@@ -77,6 +87,8 @@ if (isBroadcastPage) {
             peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer))
                 .then(() => console.log('Answer received from', data.sender))
                 .catch(err => console.error('Error setting answer:', err));
+        } else {
+            console.warn('No peer connection for sender:', data.sender);
         }
     });
 
@@ -108,6 +120,7 @@ if (isViewerPage) {
     const streamCount = document.getElementById('streamCount');
 
     function setupViewer() {
+        if (peerConnection) peerConnection.close();
         peerConnection = new RTCPeerConnection(config);
         peerConnection.ontrack = (event) => {
             remoteVideo.srcObject = event.streams[0];
@@ -121,8 +134,21 @@ if (isViewerPage) {
                 console.log('Sent ICE candidate to broadcaster');
             }
         };
+        peerConnection.onconnectionstatechange = () => {
+            console.log('Viewer connection state:', peerConnection.connectionState);
+            if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
+                remoteVideo.srcObject = null;
+                streamTitle.textContent = 'No Live Stream';
+                streamStatus.textContent = 'Broadcaster disconnected';
+                retryConnection();
+            }
+        };
         socket.emit('watcher');
         console.log('Watcher emitted');
+    }
+
+    function retryConnection() {
+        setTimeout(setupViewer, 2000); // Retry every 2 seconds if disconnected
     }
 
     socket.on('connect', () => {
@@ -136,11 +162,16 @@ if (isViewerPage) {
     });
 
     socket.on('offer', async (data) => {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        socket.emit('answer', { answer, target: data.sender });
-        console.log('Answer sent to broadcaster');
+        try {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('answer', { answer, target: data.sender });
+            console.log('Answer sent to broadcaster');
+        } catch (err) {
+            console.error('Error handling offer:', err);
+            retryConnection();
+        }
     });
 
     socket.on('ice-candidate', (candidate) => {
@@ -154,13 +185,24 @@ if (isViewerPage) {
         streamTitle.textContent = 'No Live Stream';
         streamStatus.textContent = 'Broadcaster disconnected';
         if (peerConnection) peerConnection.close();
-        setupViewer(); // Retry connection
+        retryConnection();
+    });
+
+    socket.on('broadcaster-stopped', () => {
+        remoteVideo.srcObject = null;
+        streamTitle.textContent = 'No Live Stream';
+        streamStatus.textContent = 'Broadcaster stopped';
+        if (peerConnection) peerConnection.close();
+        retryConnection();
     });
 
     socket.on('update-users', (totalUsers, activeStreams) => {
         userCount.textContent = totalUsers;
         streamCount.textContent = activeStreams;
     });
+
+    // Initial setup
+    setupViewer();
 }
 
 // Admin page logic
