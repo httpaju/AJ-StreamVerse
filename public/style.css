@@ -21,39 +21,36 @@ header h1 {
     font-size: 24px;
 }
 
-header button, header a {
+header a {
     background-color: #fff;
     color: #ff0000;
-    border: none;
     padding: 8px 16px;
     font-size: 16px;
-    cursor: pointer;
-    border-radius: 2px;
     text-decoration: none;
+    border-radius: 2px;
 }
 
-header button:hover, header a:hover {
+header a:hover {
     background-color: #f0f0f0;
 }
 
 .main-container {
-    display: flex;
     max-width: 1280px;
     margin: 20px auto;
-    gap: 20px;
+    padding: 0 20px;
 }
 
-.video-section, .admin-section {
-    flex: 3;
+.video-section {
     background-color: #fff;
     padding: 20px;
     border-radius: 4px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
-#liveVideo {
+video {
     width: 100%;
-    height: 480px;
+    max-width: 720px;
+    height: 405px;
     background-color: #000;
     border-radius: 4px;
 }
@@ -62,47 +59,32 @@ header button:hover, header a:hover {
     padding: 10px 0;
 }
 
-.video-info h2, .admin-section h2 {
+.video-info h2 {
     margin: 0 0 10px;
     font-size: 20px;
 }
 
-.video-info p, .admin-section p {
+.video-info p {
     margin: 5px 0;
     color: #606060;
 }
 
-.sidebar {
-    flex: 1;
-    background-color: #fff;
-    padding: 10px;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-}
-
-.sidebar h3 {
-    margin: 0 0 10px;
-    font-size: 16px;
-}
-
-#liveStreams {
-    font-size: 14px;
-    color: #606060;
-}
-
-.admin-section input {
-    padding: 8px;
-    font-size: 16px;
-    margin: 5px 0;
-    width: 200px;
-}
-
-.admin-section button {
+.video-info button {
     padding: 8px 16px;
     font-size: 16px;
+    margin-right: 10px;
     cursor: pointer;
-    margin: 5px 0;
+    border: none;
+    border-radius: 2px;
+    background-color: #ff0000;
+    color: white;
 }
 
-#userList {
-    list
+.video-info button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.video-info button:hover:not(:disabled) {
+    background-color: #cc0000;
+}
