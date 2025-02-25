@@ -10,7 +10,7 @@ const io = new Server(server);
 app.use(express.static('public'));
 
 // Environment variables (set in Render or .env file locally)
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '714536998290-qse340d9l2cm2i4oh7h92iu3aasuqcdg.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '454804752264-0123c9jja9lgpqoo5laqfps29pt40cll.apps.googleusercontent.com';
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Allowed broadcaster emails (replace with your own)
