@@ -5,24 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AJ StreamVerse - Broadcast</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Google Sign-In library -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <header>
         <div class="logo-container">
-          <a href="/" class="logo"> <img src="/logo.png" alt="AJ StreamVerse Logo" class="logo"> </a>
+            <img src="/logo.png" alt="AJ StreamVerse Logo" class="logo">
             <h1>AJ StreamVerse - Broadcast</h1>
         </div>
-      
+    
     </header>
     <div class="main-container">
         <div class="video-section">
-            <video id="localVideo" autoplay muted playsinline></video>
-            <div class="video-info">
-                <h2 id="streamTitle">Your Broadcast</h2>
-                <p id="streamStatus">Not Live</p>
-                <button id="startButton">Start Broadcast</button>
-                <button id="stopButton" disabled>Stop Broadcast</button>
-                <p>Total Users: <span id="userCount">0</span> | Live Streams: <span id="streamCount">0</span></p>
+            <div id="signin-form">
+                <h2>Broadcaster Sign In</h2>
+                <!-- Google Sign-In button -->
+                <div id="g_id_onload"
+                     data-client_id="YOUR_CLIENT_ID.apps.googleusercontent.com"
+                     data-callback="handleCredentialResponse"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
+                <p id="signinStatus"></p>
+            </div>
+            <div id="broadcast-controls" style="display: none;">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="video-info">
+                    <h2 id="streamTitle">Your Broadcast</h2>
+                    <p id="streamStatus">Not Live</p>
+                    <button id="startButton">Start Broadcast</button>
+                    <button id="stopButton" disabled>Stop Broadcast</button>
+                    <p>Total Users: <span id="userCount">0</span> | Live Streams: <span id="streamCount">0</span></p>
+                </div>
             </div>
         </div>
     </div>
