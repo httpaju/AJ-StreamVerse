@@ -9,7 +9,7 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 454804752264-0123c9jja9lgpqoo5laqfps29pt40cll.apps.googleusercontent.com';
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Replace with your allowed broadcaster emails
