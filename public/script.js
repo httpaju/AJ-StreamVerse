@@ -17,7 +17,7 @@ const config = {
 // Google Sign-In callback
 function handleCredentialResponse(response) {
     const idToken = response.credential;
-    const profile = decodeJwt(idToken); // Simple JWT decode (below)
+    const profile = decodeJwt(idToken);
     console.log('Google Sign-In successful:', profile.email);
 
     if (isBroadcastPage) {
@@ -25,17 +25,26 @@ function handleCredentialResponse(response) {
         const broadcastControls = document.getElementById('broadcast-controls');
         const signinStatus = document.getElementById('signinStatus');
 
-        signinForm.style.display = 'none';
-        broadcastControls.style.display = 'block';
-        signinStatus.textContent = `Signed in as ${profile.email}`;
-        signinStatus.style.color = 'green';
+        socket.emit('broadcaster-login', { idToken });
 
-        // Notify server of authenticated broadcaster
-        socket.emit('broadcaster-login', { email: profile.email });
+        socket.on('broadcaster-auth', (success) => {
+            if (success) {
+                signinForm.style.display = 'none';
+                broadcastControls.style.display = 'block';
+                signinStatus.textContent = `Signed in as ${profile.email}`;
+                signinStatus.style.color = 'green';
+                console.log('Broadcaster authenticated');
+                socket.emit('broadcaster'); // Register as broadcaster after auth
+            } else {
+                signinStatus.textContent = 'Unauthorized or invalid credentials';
+                signinStatus.style.color = 'red';
+                console.log('Broadcaster authentication failed');
+            }
+        });
     }
 }
 
-// Simple JWT decoder (for demo purposes; use a library like jwt-decode in production)
+// Simple JWT decoder (for display only)
 function decodeJwt(token) {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -67,7 +76,7 @@ if (isBroadcastPage) {
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localVideo.srcObject = localStream;
-            socket.emit('broadcaster');
+            socket.emit('broadcaster'); // Re-emit to ensure registration
             startButton.disabled = true;
             stopButton.disabled = false;
             streamStatus.textContent = 'Live Now';
@@ -136,6 +145,8 @@ if (isBroadcastPage) {
             peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer))
                 .then(() => console.log('Answer received from', data.sender))
                 .catch(err => console.error('Error setting answer from', data.sender, ':', err));
+        } else {
+            console.warn('No peer connection for sender:', data.sender);
         }
     });
 
@@ -158,7 +169,7 @@ if (isBroadcastPage) {
     });
 }
 
-// Viewer page logic (unchanged)
+// Viewer page logic
 if (isViewerPage) {
     const remoteVideo = document.getElementById('remoteVideo');
     const streamTitle = document.getElementById('streamTitle');
@@ -223,6 +234,7 @@ if (isViewerPage) {
                 setupViewer();
             } else {
                 clearInterval(retryInterval);
+                console.log('Viewer connected successfully');
             }
         }, 2000);
     }
@@ -234,7 +246,14 @@ if (isViewerPage) {
     socket.on('broadcaster-available', () => {
         if (!remoteVideo.srcObject) {
             setupViewer();
+            console.log('Broadcaster available; viewer retrying');
         }
+    });
+
+    socket.on('no-broadcaster', () => {
+        resetViewer();
+        retryConnection();
+        console.log('No broadcaster available; viewer retrying');
     });
 
     socket.on('offer', async (data) => {
@@ -259,11 +278,13 @@ if (isViewerPage) {
     socket.on('broadcaster-disconnected', () => {
         resetViewer();
         retryConnection();
+        console.log('Broadcaster disconnected; viewer retrying');
     });
 
     socket.on('broadcaster-stopped', () => {
         resetViewer();
         retryConnection();
+        console.log('Broadcaster stopped; viewer retrying');
     });
 
     socket.on('update-users', (totalUsers, activeStreams) => {
@@ -322,4 +343,4 @@ if (isAdminPage) {
             socket.emit('admin-login', { username: adminUsername.value, password: adminPassword.value });
         }
     });
-            }
+}
