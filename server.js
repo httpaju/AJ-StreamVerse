@@ -17,7 +17,7 @@ const allowedBroadcasters = ['aj.applications.brazil@gmail.com', 'ajmal.aj.appli
 
 let broadcaster = null;
 let users = {};
-const admins = { 'adminUser': 'securePass123' };
+const admins = { 'ajmal': 'ajmals123' };
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
