@@ -13,7 +13,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 454804752264-0123c9jja9
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Replace with your allowed broadcaster emails
-const allowedBroadcasters = ['your.email@example.com', 'another.email@example.com'];
+const allowedBroadcasters = ['aj.applications.brazil@gmail.com', 'ajmal.aj.applications@gmail.com'];
 
 let broadcaster = null;
 let users = {};
