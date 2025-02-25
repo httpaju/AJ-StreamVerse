@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const { OAuth2Client } = require('google-auth-library'); // For token validation
 
 const app = express();
 const server = http.createServer(app);
@@ -8,21 +9,59 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
+// Environment variables (set in Render or .env file locally)
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '714536998290-qse340d9l2cm2i4oh7h92iu3aasuqcdg.apps.googleusercontent.com';
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+// Allowed broadcaster emails (replace with your own)
+const allowedBroadcasters = ['ajmal.aj.applications@gmail.com', 'aj.applications.brazil@gmail.com']; // Update this list
+
 let broadcaster = null;
-let users = {}; // Store connected users
-const admins = { 'ajmal': 'ajmal123' }; // Admin credentials
+let users = {};
+const admins = { 'adminUser': 'securePass123' }; // Admin credentials (consider hashing in production)
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
-    users[socket.id] = { role: 'viewer', isBroadcaster: false };
+    users[socket.id] = { role: 'viewer', isBroadcaster: false, authenticated: false };
+
+    socket.on('broadcaster-login', async ({ idToken }) => {
+        try {
+            // Verify Google ID token
+            const ticket = await client.verifyIdToken({
+                idToken: idToken,
+                audience: GOOGLE_CLIENT_ID
+            });
+            const payload = ticket.getPayload();
+            const email = payload['email'];
+
+            // Check if email is in allowed broadcasters list
+            if (allowedBroadcasters.includes(email)) {
+                users[socket.id].authenticated = true;
+                socket.emit('broadcaster-auth', true);
+                console.log('Broadcaster authenticated via Google:', socket.id, email);
+            } else {
+                socket.emit('broadcaster-auth', false);
+                console.log('Unauthorized broadcaster attempt:', socket.id, email);
+            }
+        } catch (err) {
+            socket.emit('broadcaster-auth', false);
+            console.error('Error verifying Google token:', err);
+        }
+    });
 
     socket.on('broadcaster', () => {
+        if (!users[socket.id].authenticated) {
+            socket.emit('broadcaster-auth-required');
+            console.log('Authentication required for broadcaster:', socket.id);
+            return;
+        }
         if (!broadcaster) {
             broadcaster = socket.id;
             users[socket.id].role = 'broadcaster';
             users[socket.id].isBroadcaster = true;
             socket.broadcast.emit('broadcaster-available');
             io.emit('update-users', Object.keys(users).length, broadcaster ? 1 : 0);
+            console.log('Broadcaster registered:', socket.id);
         }
     });
 
